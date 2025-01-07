@@ -24,7 +24,7 @@ jobs:
       - name: Get changed files
         id: changes
         run: |
-          echo "files=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.base_ref }} ${{ github.sha }} | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | xargs)" >> $GITHUB_OUTPUT
   
       - name: Determine triggering component dir
         id: determine_dir
