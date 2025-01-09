@@ -10,21 +10,42 @@ on:
 
 env:
     model_dirs: 'folder/'
-    
+
 jobs:
   list-files:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
       - name: Get changed files
-        id: changed-files
+        id: changed_files
         run: |
           echo "Changed files:"
-          git diff --name-only HEAD^ HEAD
+          echo "files=$(git diff --name-only HEAD^ HEAD | xargs)" >> $GITHUB_OUTPUT
+
+      - name: Determine model dir
+        id: determine_dir
+        shell: bash
+        run: |
+          # Get the list of model dirs being monitored
+          monitored_paths=$(echo "${{ env.model_dirs }}" | tr "," " ")
+          echo "Monitored model dirs: $monitored_paths"
+          echo "Changed files: ${{ steps.changed_files.outputs.files }}"
+
+          # Loop through each path
+          for path in $monitored_paths
+          do
+            # Check if the modified files include this path
+            if echo "${{ steps.changed_files.outputs.files }}" | grep -q "$path"; then
+              # Set the output variable and exit the loop
+              echo "modified model dir is $path"
+              echo "model_dir=$path" >> $GITHUB_OUTPUT
+              break
+            fi
+          done
 # jobs:
 #   deploy:
 #     runs-on: ubuntu-latest
@@ -45,24 +66,5 @@ jobs:
 #           git diff --name-only before after
 #           echo "files=$(git diff --name-only before after | xargs)" >> $GITHUB_OUTPUT
   
-#       - name: Determine model dir
-#         id: determine_dir
-#         shell: bash
-#         run: |
-#           # Get the list of model dirs being monitored
-#           monitored_paths=$(echo "${{ env.model_dirs }}" | tr "," " ")
-#           echo "Monitored model dirs: $monitored_paths"
-#           echo "Changed files: ${{ steps.changed_files.outputs.files }}"
 
-#           # Loop through each path
-#           for path in $monitored_paths
-#           do
-#             # Check if the modified files include this path
-#             if echo "${{ steps.changed_files.outputs.files }}" | grep -q "$path"; then
-#               # Set the output variable and exit the loop
-#               echo "modified model dir is $path"
-#               echo "model_dir=$path" >> $GITHUB_OUTPUT
-#               break
-#             fi
-#           done
     
